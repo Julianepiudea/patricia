@@ -7,7 +7,7 @@ import { leerArchivo, parsearTexto, autoMapear, aplicarMapa } from "./datos.js";
 import { AVISO } from "./calculos.js";
 import { analizarLibro, responderArchivo, sugerenciasArchivo, guiaExcel, resumenTexto } from "./formato.js";
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -143,7 +143,7 @@ function vInicio() {
     <section class="heroe">
       <span class="orbe grande" aria-hidden="true"></span>
       <div>
-        <div class="etiqueta">${saludo}</div>
+        <div class="cejilla"><a class="marca-lab" href="#/acerca" title="Labmédico · Laboratorio Médico de Referencia"><img src="iconos/labmedico.png" alt="Labmédico"></a><span class="etiqueta">${saludo}</span></div>
         <h1>Soy <span>PatricIA</span>, tu asistente de metrología y calidad clínica.</h1>
         <p>Pregúntame sobre ISO 15189, incertidumbre, Westgard, verificación de métodos o normativa colombiana. Sube tus datos de control y te los analizo, sin que salgan de tu dispositivo.</p>
         <form class="buscador" id="f-inicio" role="search">
@@ -396,7 +396,7 @@ function pintarResultado(out, r, c) {
   graficos.forEach((g) => g.destroy()); graficos = [];
   const fecha = new Date().toLocaleString("es-CO");
   out.innerHTML = `
-    <div class="solo-impresion"><h2>PatricIA · ${esc(r.titulo)}</h2><p class="sub">Reporte generado el ${esc(fecha)} · versión ${VERSION}</p></div>
+    <div class="solo-impresion"><img src="iconos/labmedico.png" alt="Labmédico" style="height:42px"><h2>PatricIA · ${esc(r.titulo)}</h2><p class="sub">Reporte generado el ${esc(fecha)} · versión ${VERSION}</p></div>
     <div class="tarjeta no-imprimir" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px"><h2 style="margin:0;font-size:1.1rem">${esc(r.titulo)}</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" id="imprimir"><i data-lucide="printer"></i>Imprimir / PDF</button><button class="btn" id="exportar"><i data-lucide="sheet"></i>Exportar CSV</button><button class="btn fantasma" id="copiar"><i data-lucide="copy"></i>Copiar resumen</button></div></div>
     ${r.kpis.length ? `<div class="kpis">${r.kpis.map((k, i) => `<div class="kpi ${k.estado || ""}" style="--i:${i}"><div class="etiqueta">${esc(k.etiqueta)}</div><div class="valor" ${k.contador && typeof k.valor === "number" ? `data-contar="${k.valor}"` : ""}>${esc(fmtNum(k.valor))}${k.unidad ? `<small>${esc(k.unidad)}</small>` : ""}</div>${k.nota ? `<div class="nota">${esc(k.nota)}</div>` : ""}</div>`).join("")}</div>` : ""}
@@ -545,7 +545,7 @@ function pintarInforme() {
   graficos.forEach((g) => g.destroy()); graficos = [];
   const secOk = inf.secciones.filter((s) => s.estado === "ok").length;
   cont.innerHTML = `
-    <div class="solo-impresion"><h2>PatricIA · Revisión del formato ${esc(inf.archivo)}</h2><p class="sub">${new Date().toLocaleString("es-CO")}</p></div>
+    <div class="solo-impresion"><img src="iconos/labmedico.png" alt="Labmédico" style="height:42px"><h2>PatricIA · Revisión del formato ${esc(inf.archivo)}</h2><p class="sub">${new Date().toLocaleString("es-CO")}</p></div>
     <div class="tarjeta" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
         <div><div class="etiqueta">${inf.esPlantilla ? "Plantilla (sin datos)" : "Ejercicio de verificación"}</div><h2 style="margin:6px 0 2px">${esc(inf.prueba)}</h2><p class="sub" style="margin:0">${esc(inf.archivo)}${inf.metodo ? ` · ${esc(inf.metodo)} vs ${esc(inf.comparador)}` : ""}${inf.eta != null ? ` · ETa ${fmtNum(inf.eta)} %` : ""}</p></div>
@@ -700,6 +700,7 @@ function vMas() {
 function vAcerca() {
   vista.innerHTML = `<div class="cabecera"><div><h1>Acerca de PatricIA</h1><p>Versión ${VERSION}</p></div></div>
     <div class="bento">
+      <div class="tarjeta b-6" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><span class="marca-lab grande"><img src="iconos/labmedico.png" alt="Labmédico, Laboratorio Médico de Referencia"></span><p class="sub" style="margin:0;flex:1;min-width:220px">PatricIA es una herramienta de apoyo del <b>Laboratorio Médico de Referencia — Labmédico</b> para su equipo de calidad y metrología. Su emblema animado evoca la siembra en caja de Petri del logo del laboratorio.</p></div>
       <div class="tarjeta b-3 md"><h3>Qué es</h3><p>PatricIA es un asistente experto en metrología y calidad para el laboratorio clínico: una base de conocimiento consultable, guías de decisión, calculadoras validadas y una autoevaluación ISO 15189. Funciona <b>sin conexión</b> y <b>sin inteligencia artificial generativa</b>: las respuestas provienen de contenido experto revisable, y los cálculos se hacen en tu dispositivo.</p><p><b>Privacidad:</b> los archivos que subes no salen de tu equipo. La autoevaluación y las preferencias se guardan solo en este navegador.</p></div>
       <div class="tarjeta b-3 md"><h3>Instalar en tu dispositivo</h3>
         <p><b>Android (Chrome):</b> menú ⋮ → <i>Instalar aplicación</i> (o el botón <i>Instalar</i> de PatricIA).</p>

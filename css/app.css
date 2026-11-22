@@ -60,20 +60,35 @@ h1, h2, h3, h4 { font-family: var(--display); line-height: 1.2; letter-spacing: 
 .nav a:hover { background: var(--superficie-2); color: var(--texto); text-decoration: none; transform: translateX(2px); }
 .nav a.activo { background: var(--acento-suave); color: var(--acento); }
 .nav a svg { width: 19px; height: 19px; flex: none; }
-.lateral .pie { margin-top: auto; display: flex; gap: 8px; }
+.lateral .pie { display: flex; gap: 8px; }
 .principal { min-width: 0; padding: 28px clamp(16px, 4vw, 48px) 110px; max-width: 1240px; width: 100%; margin: 0 auto; }
 .barra-movil, .tabs-movil { display: none; }
 
 /* Orbe de PatricIA */
-.orbe { --t: 44px; width: var(--t); height: var(--t); border-radius: 50%; position: relative; flex: none;
-  background: radial-gradient(circle at 32% 28%, #ffffffcc 0 6%, transparent 22%), conic-gradient(from 210deg, var(--acento), var(--acento-2), #818cf8, var(--acento));
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset, 0 0 calc(var(--t) * 0.5) -2px color-mix(in srgb, var(--acento) 60%, transparent); animation: girar 14s linear infinite; }
-.orbe::after { content: ""; position: absolute; inset: 18%; border-radius: 50%; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--bg) 20%, transparent), color-mix(in srgb, var(--bg) 70%, transparent)); backdrop-filter: blur(2px); animation: respirar 4.5s var(--ease-std) infinite; }
+/* Orbe con identidad Labmédico: anillo en los azules de la marca que gira; emblema (caja de Petri
+   con estrías de siembra animadas) fijo en el centro. */
+:root { --marca-claro: #129fe0; --marca-oscuro: #18489b; }
+.orbe { --t: 44px; width: var(--t); height: var(--t); border-radius: 50%; position: relative; flex: none; display: inline-block;
+  box-shadow: 0 0 calc(var(--t) * 0.5) -2px color-mix(in srgb, var(--marca-claro) 65%, transparent); }
+.orbe::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 30% 26%, #ffffffd0 0 5%, transparent 20%), conic-gradient(from 210deg, var(--marca-claro), var(--marca-oscuro), var(--acento), #7dd3fc, var(--marca-claro));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset; animation: girar 14s linear infinite; }
+.orbe::after { content: ""; position: absolute; inset: 15%; border-radius: 50%;
+  background: url("../iconos/emblema.svg") center / 80% no-repeat, radial-gradient(circle at 50% 38%, #163a72, #081a36 70%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) inset, 0 0 0 1px rgba(143, 220, 255, 0.15); animation: latir 4.5s var(--ease-std) infinite; }
 .orbe.grande { --t: 132px; }
-.orbe.escuchando { animation-duration: 3s; }
+.orbe.escuchando::before { animation-duration: 2.5s; }
 .orbe.escuchando::after { animation-duration: 1.1s; }
 @keyframes girar { to { transform: rotate(360deg); } }
-@keyframes respirar { 50% { transform: scale(0.82); opacity: 0.75; } }
+@keyframes latir { 50% { transform: scale(0.94); } }
+
+/* Logo oficial de Labmédico sobre pastilla blanca (el original tiene fondo blanco) */
+.marca-lab { display: inline-flex; align-items: center; background: #fff; border-radius: 12px; padding: 6px 10px; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 16px -10px rgba(0, 0, 0, 0.45); border: 1px solid rgba(15, 23, 42, 0.06); transition: transform 200ms var(--ease-out); }
+.marca-lab:hover { transform: translateY(-1px); }
+.marca-lab img { height: 26px; width: auto; display: block; }
+.marca-lab.grande img { height: 52px; }
+.lateral .marca-lab { margin: auto 6px 12px; justify-content: center; }
+.lateral .marca-lab img { height: 30px; }
 
 /* Componentes */
 .tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 20px; box-shadow: var(--sombra); backdrop-filter: blur(12px); }
@@ -102,6 +117,7 @@ h1, h2, h3, h4 { font-family: var(--display); line-height: 1.2; letter-spacing: 
 .heroe { display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center; padding: 18px 0 26px; }
 .heroe h1 { font-size: clamp(1.9rem, 4.2vw, 3rem); margin-bottom: 8px; }
 .heroe h1 span { background: linear-gradient(120deg, var(--acento), var(--acento-2) 60%, #a5b4fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cejilla { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 .heroe p { color: var(--texto-2); font-size: 1.06rem; margin: 0 0 18px; max-width: 60ch; }
 .buscador { display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 18px; border-radius: 18px; background: var(--solido); border: 1px solid var(--borde-fuerte); box-shadow: var(--sombra); transition: border-color 200ms var(--ease-std), box-shadow 200ms var(--ease-std); }
 .buscador:focus-within { border-color: var(--acento); box-shadow: var(--sombra), 0 0 0 4px var(--acento-suave); }
@@ -294,7 +310,7 @@ textarea { min-height: 110px; resize: vertical; font-family: ui-monospace, Conso
   .heroe { grid-template-columns: minmax(0, 1fr); text-align: center; gap: 14px; padding-top: 6px; }
   .heroe .orbe.grande { --t: 96px; margin: 0 auto; }
   .heroe p { margin-left: auto; margin-right: auto; }
-  .heroe .chips { justify-content: center; }
+  .heroe .chips, .heroe .cejilla { justify-content: center; }
   .bento { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
   .b-2, .b-3 { grid-column: span 1; } .b-4, .b-6 { grid-column: span 2; }
   .calc-layout, .doc-layout { grid-template-columns: 1fr; }
