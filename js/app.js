@@ -5,8 +5,9 @@ import { CHECKLIST } from "./checklist.js";
 import { CALCULADORAS } from "./definiciones.js";
 import { leerArchivo, parsearTexto, autoMapear, aplicarMapa } from "./datos.js";
 import { AVISO } from "./calculos.js";
+import { analizarLibro, responderArchivo, sugerenciasArchivo, guiaExcel, resumenTexto } from "./formato.js";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -24,7 +25,7 @@ function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.ad
 // ------------------------------------------------------------ navegación
 const NAV = [
   ["inicio", "Inicio", "sparkles"], ["preguntar", "Preguntar", "message-circle-question"], ["guias", "Guías", "compass"],
-  ["calculadoras", "Calculadoras", "calculator"], ["checklist", "Autoevaluación 15189", "list-checks"], ["biblioteca", "Biblioteca", "library"],
+  ["calculadoras", "Calculadoras", "calculator"], ["formato", "Revisar mi Excel", "file-search"], ["checklist", "Autoevaluación 15189", "list-checks"], ["biblioteca", "Biblioteca", "library"],
   ["glosario", "Glosario", "book-a"], ["acerca", "Acerca e instalación", "info"],
 ];
 const TABS = [["inicio", "Inicio", "sparkles"], ["preguntar", "Preguntar", "message-circle-question"], ["guias", "Guías", "compass"], ["calculadoras", "Calcular", "calculator"], ["mas", "Más", "layout-grid"]];
@@ -63,7 +64,15 @@ function md(texto) {
   tmp.innerHTML = html;
   $$("table", tmp).forEach((t) => { const w = document.createElement("div"); w.className = "tabla-env"; t.replaceWith(w); w.appendChild(t); });
   $$("a", tmp).forEach((a) => { if (/^https?:/.test(a.getAttribute("href") || "")) { a.target = "_blank"; a.rel = "noopener"; } if ((a.getAttribute("href") || "").startsWith("#/calc/")) a.classList.add("calc-link"); });
-  $$("script,iframe,object", tmp).forEach((n) => n.remove());
+  // Lista blanca de etiquetas y atributos (el contenido puede venir de archivos del usuario)
+  const PERMITIDAS = new Set(["P", "A", "STRONG", "EM", "B", "I", "CODE", "PRE", "UL", "OL", "LI", "BLOCKQUOTE", "H1", "H2", "H3", "H4", "TABLE", "THEAD", "TBODY", "TR", "TH", "TD", "DIV", "SPAN", "BR", "HR", "DEL"]);
+  $$("*", tmp).forEach((el) => {
+    if (!PERMITIDAS.has(el.tagName)) { el.replaceWith(document.createTextNode(el.textContent)); return; }
+    for (const at of [...el.attributes]) {
+      const n = at.name.toLowerCase();
+      if (n === "href" ? !/^(#|https?:)/i.test(at.value) : !["class", "id", "target", "rel", "align", "colspan", "rowspan"].includes(n)) el.removeAttribute(at.name);
+    }
+  });
   return tmp.innerHTML;
 }
 const resaltar = (texto, q) => {
@@ -102,7 +111,7 @@ function hablar(texto) {
 }
 
 // ------------------------------------------------------------ enrutador
-const RUTAS = { inicio: vInicio, preguntar: vPreguntar, guias: vGuias, guia: vGuia, calculadoras: vCalculadoras, calc: vCalc, checklist: vChecklist, biblioteca: vBiblioteca, doc: vDoc, plantilla: vPlantilla, glosario: vGlosario, acerca: vAcerca, mas: vMas };
+const RUTAS = { inicio: vInicio, preguntar: vPreguntar, guias: vGuias, guia: vGuia, calculadoras: vCalculadoras, calc: vCalc, formato: vFormato, checklist: vChecklist, biblioteca: vBiblioteca, doc: vDoc, plantilla: vPlantilla, glosario: vGlosario, acerca: vAcerca, mas: vMas };
 let graficos = [];
 async function enrutar() {
   const [camino, qs] = (location.hash.replace(/^#\/?/, "") || "inicio").split("?");
@@ -148,6 +157,7 @@ function vInicio() {
     </section>
     <section class="bento">
       ${destacadas.map((c, i) => `<a class="tarjeta interactiva b-3" style="--i:${i}" href="#/calc/${c.id}"><div class="icono-caja"><i data-lucide="${c.icono}"></i></div><h3>${esc(c.nombre)}</h3><p>${esc(c.descripcion)}</p></a>`).join("")}
+      <a class="tarjeta interactiva b-6" style="--i:4;display:flex;gap:16px;align-items:center" href="#/formato"><div class="icono-caja"><i data-lucide="file-search"></i></div><div><h3 style="margin-top:0">Revisar mi Excel de verificación</h3><p>Sube tu formato (p. ej. FO-LG-61): PatricIA recalcula todo, detecta errores en las fórmulas, responde preguntas sobre el ejercicio y te explica cómo hacerlo en Excel.</p></div></a>
       <a class="tarjeta interactiva b-2" style="--i:4" href="#/guias"><div class="icono-caja"><i data-lucide="compass"></i></div><h3>Guías paso a paso</h3><p>${Object.keys(GUIAS).length} árboles de decisión: rechazo de control, EEC insatisfactoria, verificar o validar…</p></a>
       <a class="tarjeta interactiva b-2" style="--i:5;display:flex;gap:16px;align-items:center" href="#/checklist"><span class="anillo" style="--p:${progreso.avance}" data-texto="${progreso.avance}%"></span><div><h3 style="margin-top:0">Autoevaluación ISO 15189</h3><p>${progreso.respondidos} de ${progreso.total} requisitos revisados.</p></div></a>
       <a class="tarjeta interactiva b-2 dato-dia" style="--i:6" href="#/glosario"><div class="etiqueta">Término del día</div><h3>${esc(tTit || "Glosario")}</h3><blockquote>${esc((tCuerpo.join(" ").trim() || "").slice(0, 150))}…</blockquote></a>
@@ -488,6 +498,10 @@ function dibujar(canvas, g) {
     cfg = { type: "scatter", data: { datasets: [{ data: g.grupos.flatMap((gr, i) => gr.valores.map((v, j) => ({ x: i + 1 + (j - (gr.valores.length - 1) / 2) * 0.07, y: v }))), backgroundColor: alfa(C.acento, 0.8), pointRadius: 4 }] },
       options: { ...base, plugins: { ...base.plugins, lineas: { h: [{ y: g.media, color: C.acento2, dash: [5, 4], etiqueta: "media" }] } },
         scales: { x: { type: "linear", min: 0.5, max: dias.length + 0.5, ticks: { stepSize: 1, callback: (v) => (Number.isInteger(v) ? "Día " + dias[v - 1] : "") }, grid: { display: false } }, y: { grid: { color: C.rejilla } } } } };
+  } else if (g.tipo === "sesgoNiveles") {
+    cfg = { type: "bar", data: { labels: g.etiquetas, datasets: [{ data: g.valores, backgroundColor: g.valores.map((v) => (v < 0 ? C.acento2 : C.acento)), borderRadius: 8, maxBarThickness: 56 }] },
+      options: { ...base, plugins: { ...base.plugins, tooltip: { ...tooltip, callbacks: { label: (it) => `sesgo ${it.raw.toFixed(2)} %` } }, lineas: { h: [{ y: 0, color: C.texto }, { y: g.agrupado, color: C.mal, dash: [6, 4], etiqueta: `sesgo agrupado del archivo ${g.agrupado.toFixed(2)} %` }] } },
+        scales: { x: { grid: { display: false } }, y: { grid: { color: C.rejilla }, ticks: { callback: (v) => v + " %" } } } } };
   } else if (g.tipo === "zscores") {
     const col = g.valores.map((z) => (z == null ? C.texto : Math.abs(z) >= 3 ? C.mal : Math.abs(z) > 2 ? C.alerta : C.acento));
     cfg = { type: "bar", data: { labels: g.etiquetas, datasets: [{ data: g.valores, backgroundColor: col, borderRadius: 6, maxBarThickness: 40 }] },
@@ -495,6 +509,98 @@ function dibujar(canvas, g) {
         scales: { x: { grid: { display: false } }, y: { suggestedMin: -3.5, suggestedMax: 3.5, grid: { color: C.rejilla } } } } };
   }
   return cfg ? new Chart(canvas, { ...cfg, plugins: [pluginLineas] }) : null;
+}
+
+// ------------------------------------------------------------ Revisar mi Excel de verificación
+let informe = null;
+const ESTADO_SEC = { ok: ["ok", "circle-check", "Sin problemas"], alerta: ["alerta", "triangle-alert", "Con advertencias"], mal: ["mal", "circle-x", "Con problemas"], vacio: ["info", "circle-dashed", "Sin datos"] };
+async function vFormato() {
+  vista.innerHTML = `
+    <div class="cabecera"><div><h1>Revisar mi Excel de verificación</h1><p>Sube tu formato de verificación de métodos cuantitativos (.xls o .xlsx, p. ej. FO-LG-61). PatricIA recalcula cada hoja, revisa las fórmulas, te dice qué está bien y qué no, responde tus preguntas sobre el ejercicio y te explica cómo hacerlo en Excel. El archivo se analiza en tu dispositivo y no se envía a ningún lugar.</p></div></div>
+    <label class="zona" id="zona-fmt" style="margin-bottom:18px"><input type="file" id="archivo-fmt" accept=".xls,.xlsx,.xlsm,.ods" hidden>
+      <i data-lucide="file-search"></i><b>${informe ? "Analizar otro archivo" : "Sube tu formato de verificación"}</b><small>o arrástralo aquí · hojas esperadas: Repetibilidad, Precisión intermedia, Comparación de métodos, Veracidad, Incertidumbre, Linealidad</small></label>
+    <div id="informe"></div>`;
+  const zona = $("#zona-fmt"), inp = $("#archivo-fmt");
+  const cargar = async (file) => {
+    $("#informe").innerHTML = `<div class="tarjeta vacio"><span class="orbe escuchando"></span><h3>Analizando ${esc(file.name)}…</h3></div>`; iconos();
+    try {
+      if (!window.XLSX) throw new Error("El lector de Excel aún no está listo; intenta de nuevo en unos segundos.");
+      const wb = window.XLSX.read(await file.arrayBuffer(), { type: "array", cellFormula: true });
+      informe = analizarLibro(wb, file.name);
+      informe.chat = [];
+      pintarInforme();
+      toast("Archivo analizado");
+    } catch (e) { informe = null; $("#informe").innerHTML = `<div class="mensaje mal"><i data-lucide="circle-x"></i><span>${esc(e.message)}</span></div>`; iconos(); }
+  };
+  inp.onchange = () => inp.files[0] && cargar(inp.files[0]);
+  zona.addEventListener("dragover", (e) => { e.preventDefault(); zona.classList.add("sobre"); });
+  zona.addEventListener("dragleave", () => zona.classList.remove("sobre"));
+  zona.addEventListener("drop", (e) => { e.preventDefault(); zona.classList.remove("sobre"); e.dataTransfer.files[0] && cargar(e.dataTransfer.files[0]); });
+  if (informe) pintarInforme();
+}
+
+const mdHallazgo = (h) => `<div class="mensaje ${h.tipo}"><i data-lucide="${ICON_MSG[h.tipo]}"></i><span class="md">${md(h.texto)}${h.excel ? `<div style="margin-top:6px;font-size:.86rem">Fórmula sugerida: <code>${esc(h.excel)}</code></div>` : ""}</span></div>`;
+function pintarInforme() {
+  const inf = informe, cont = $("#informe");
+  graficos.forEach((g) => g.destroy()); graficos = [];
+  const secOk = inf.secciones.filter((s) => s.estado === "ok").length;
+  cont.innerHTML = `
+    <div class="solo-impresion"><h2>PatricIA · Revisión del formato ${esc(inf.archivo)}</h2><p class="sub">${new Date().toLocaleString("es-CO")}</p></div>
+    <div class="tarjeta" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start">
+        <div><div class="etiqueta">${inf.esPlantilla ? "Plantilla (sin datos)" : "Ejercicio de verificación"}</div><h2 style="margin:6px 0 2px">${esc(inf.prueba)}</h2><p class="sub" style="margin:0">${esc(inf.archivo)}${inf.metodo ? ` · ${esc(inf.metodo)} vs ${esc(inf.comparador)}` : ""}${inf.eta != null ? ` · ETa ${fmtNum(inf.eta)} %` : ""}</p></div>
+        <div class="no-imprimir" style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick="window.print()"><i data-lucide="printer"></i>Imprimir informe</button><button class="btn" id="exp-hall"><i data-lucide="sheet"></i>Exportar hallazgos</button></div>
+      </div>
+      <div class="kpis" style="margin-top:14px">
+        <div class="kpi mal"><div class="etiqueta">Problemas importantes</div><div class="valor" data-contar="${inf.conteo.mal}">${inf.conteo.mal}</div></div>
+        <div class="kpi alerta"><div class="etiqueta">Advertencias</div><div class="valor" data-contar="${inf.conteo.alerta}">${inf.conteo.alerta}</div></div>
+        <div class="kpi ok"><div class="etiqueta">Secciones sin problemas</div><div class="valor">${secOk} / ${inf.secciones.length}</div></div>
+      </div>
+      <div class="chips" style="margin-top:14px">${inf.secciones.map((s) => { const [cls, ic, t] = ESTADO_SEC[s.estado] || ESTADO_SEC.vacio; return `<button class="chip" data-ir-sec="${s.id}"><i data-lucide="${ic}" style="color:var(--${cls === "info" ? "texto-3" : cls})"></i>${esc(s.titulo)} · ${t}</button>`; }).join("")}</div>
+      ${inf.generales.length ? `<div style="display:grid;gap:8px;margin-top:14px">${inf.generales.map(mdHallazgo).join("")}</div>` : ""}
+    </div>
+    <div class="tarjeta no-imprimir" style="margin-bottom:16px">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><span class="orbe" style="--t:34px"></span><div><h3 style="margin:0">Pregúntale a PatricIA sobre este archivo</h3><p class="sub" style="margin:0;font-size:.88rem">Valores, criterios, problemas, o cómo hacer un cálculo o gráfico en Excel.</p></div></div>
+      <div id="chat-fmt" class="conversacion" style="padding-bottom:6px"></div>
+      <form class="buscador" id="f-fmt" role="search"><i data-lucide="message-circle-question" class="lupa"></i><input id="q-fmt" placeholder="p. ej. ¿Cuál es el sesgo del nivel bajo?" autocomplete="off" aria-label="Pregunta sobre el archivo">${microfono()}<button class="btn primario" type="submit" aria-label="Preguntar"><i data-lucide="send"></i></button></form>
+      <div class="chips" style="margin-top:10px">${sugerenciasArchivo(inf).map((s) => `<button class="chip" data-qf="${esc(s)}"><i data-lucide="sparkle"></i>${esc(s)}</button>`).join("")}</div>
+    </div>
+    ${inf.secciones.map((s) => { const [cls, ic, t] = ESTADO_SEC[s.estado] || ESTADO_SEC.vacio; return `
+    <section class="tarjeta" id="sec-${s.id}" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><h2 style="margin:0;font-size:1.2rem">${esc(s.titulo)} <small class="sub" style="font-weight:400;font-size:.85rem">hoja «${esc(s.hoja)}»</small></h2><span class="mensaje ${cls}" style="padding:5px 12px"><i data-lucide="${ic}"></i><span>${t}</span></span></div>
+      <div style="display:grid;gap:8px">${s.hallazgos.map(mdHallazgo).join("")}</div>
+      ${(s.tablas || []).filter((tb) => tb.filas.length).map((tb) => `<div class="etiqueta" style="margin:16px 0 8px">${esc(tb.titulo)}</div><div class="tabla-env"><table><thead><tr>${tb.columnas.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${tb.filas.map((f) => `<tr>${f.map((v) => `<td${/^(cumple|NO cumple)$/.test(String(v)) ? ` class="estado ${v === "cumple" ? "ok" : "mal"}"` : ""}>${esc(fmtNum(v))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`).join("")}
+      ${s.graficos?.length ? `<div class="graficos" style="margin-top:16px">${s.graficos.map((g, i) => `<div><div class="etiqueta">${esc(g.titulo)}</div><div class="grafico"><canvas data-graf="${s.id}-${i}" role="img" aria-label="${esc(g.titulo)}"></canvas></div></div>`).join("")}</div>` : ""}
+      <details style="margin-top:14px" class="no-imprimir"><summary class="chip" style="display:inline-flex"><i data-lucide="sheet"></i>Cómo hacerlo en Excel</summary><div class="md" style="margin-top:12px">${md(guiaExcel(s.id, inf))}</div></details>
+    </section>`; }).join("")}
+    <details class="tarjeta no-imprimir" style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:600"><i data-lucide="chart-line" style="width:18px;vertical-align:-3px"></i> Reparar gráficos que no se actualizan</summary><div class="md" style="margin-top:12px">${md(guiaExcel("graficos", inf))}</div></details>
+    <div class="aviso">${esc(AVISO)} Las conclusiones del formato deben firmarlas los responsables autorizados.</div>`;
+  for (const s of inf.secciones) (s.graficos || []).forEach((g, i) => { const ch = dibujar($(`[data-graf="${s.id}-${i}"]`, cont), g); if (ch) graficos.push(ch); });
+  $$("[data-contar]", cont).forEach(contar);
+  $$("[data-ir-sec]", cont).forEach((b) => b.onclick = () => $("#sec-" + b.dataset.irSec).scrollIntoView({ behavior: "smooth", block: "start" }));
+  $("#exp-hall").onclick = () => {
+    const filas = [["Sección", "Tipo", "Hallazgo", "Fórmula sugerida"], ...inf.hallazgos.map((h) => [h.seccion, h.tipo, h.texto.replace(/\*\*/g, ""), h.excel || ""])];
+    const csv = "﻿" + filas.map((f) => f.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })), download: `PatricIA-revision-${inf.archivo.replace(/\.[^.]+$/, "")}.csv` }); a.click();
+  };
+  const chat = $("#chat-fmt");
+  const pintarChat = () => { chat.innerHTML = inf.chat.map((m) => `<div class="msg-usuario">${esc(m.q)}</div><div class="msg-patricia"><span class="orbe"></span><div class="tarjeta respuesta"><div class="md">${md(m.md)}</div></div></div>`).join(""); iconos(); };
+  const preguntarF = (q) => {
+    if (!q) return;
+    let r = responderArchivo(q, inf);
+    if (!r) {
+      const kb = buscador.buscar(q, 1)[0];
+      r = { md: kb ? `No encontré eso en los datos del archivo. Esto dice la base de conocimiento (${kb.doc} › ${kb.titulo}):\n\n${kb.md.slice(0, 1800)}` : `No encontré una respuesta. Prueba con: ${sugerenciasArchivo(inf).slice(0, 3).join(" · ")}` };
+    }
+    inf.chat.push({ q, md: r.md }); pintarChat(); $("#q-fmt").value = "";
+    chat.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  pintarChat();
+  $("#f-fmt").addEventListener("submit", (e) => { e.preventDefault(); preguntarF($("#q-fmt").value.trim()); });
+  $$("[data-qf]", cont).forEach((b) => b.onclick = () => preguntarF(b.dataset.qf));
+  activarMic(cont, $("#q-fmt"), preguntarF);
+  iconos();
+  void resumenTexto;
 }
 
 // ------------------------------------------------------------ Autoevaluación ISO 15189
@@ -543,7 +649,7 @@ function vChecklist() {
 // ------------------------------------------------------------ Biblioteca, documentos, plantillas, glosario
 async function vBiblioteca() {
   await listo;
-  const ICON = { "preguntas-frecuentes.md": "messages-square", "glosario.md": "book-a", "incertidumbre-iso-20914.md": "sigma", "control-calidad-interno.md": "activity", "especificaciones-desempeno.md": "target", "verificacion-validacion-clinica.md": "badge-check", "trazabilidad-eqa.md": "link", "sistema-gestion-iso-15189.md": "shield-check", "mapa-normativo.md": "map", "contexto-colombia.md": "landmark" };
+  const ICON = { "guia-excel.md": "sheet", "preguntas-frecuentes.md": "messages-square", "glosario.md": "book-a", "incertidumbre-iso-20914.md": "sigma", "control-calidad-interno.md": "activity", "especificaciones-desempeno.md": "target", "verificacion-validacion-clinica.md": "badge-check", "trazabilidad-eqa.md": "link", "sistema-gestion-iso-15189.md": "shield-check", "mapa-normativo.md": "map", "contexto-colombia.md": "landmark" };
   vista.innerHTML = `<div class="cabecera"><div><h1>Biblioteca</h1><p>La base de conocimiento completa de PatricIA y plantillas para tus documentos.</p></div></div>
     <div class="etiqueta" style="margin-bottom:10px">Documentos</div>
     <div class="rejilla">${DOCUMENTOS.map(([f, t], i) => { const m = (docs.get(f) || "").match(/^>\s*(.+)$/m); return `<a class="tarjeta interactiva tarjeta-calc" style="--i:${i}" href="#/doc/${f.replace(".md", "")}"><div class="icono-caja"><i data-lucide="${ICON[f] || "file-text"}"></i></div><h3>${esc(t)}</h3><p>${esc((m?.[1] || "").replace(/[*`]/g, "").slice(0, 120))}${m ? "…" : ""}</p></a>`; }).join("")}</div>

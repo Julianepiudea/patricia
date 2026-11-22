@@ -21,6 +21,7 @@ dispositivo del usuario.
   - puntajes de EEC (z, z', En).
 
   Cada resultado se puede exportar a CSV e imprimir o guardar como PDF.
+- **Revisar mi Excel**: analiza formatos de verificación de métodos cuantitativos (tipo FO-LG-61, .xls/.xlsx). Recalcula cada hoja, audita las fórmulas (rangos, celdas duplicadas, #¡REF!, sesgo agrupado, incertidumbre), responde preguntas sobre el ejercicio y da instrucciones de Excel con las celdas del propio archivo.
 - **Autoevaluación ISO 15189:2022**: lista de chequeo que se guarda en el dispositivo y se puede
   exportar.
 - **Biblioteca, glosario y plantillas.**
@@ -40,6 +41,7 @@ js/definiciones.js    formularios, columnas y ejemplos de cada calculadora
 js/guias.js           árboles de decisión
 js/checklist.js       autoevaluación ISO 15189
 js/datos.js           lectura de Excel/CSV y mapeo de columnas
+js/formato.js         analizador de formatos de verificación en Excel
 contenido/*.md        base de conocimiento (Markdown)
 vendor/, fuentes/     librerías y tipografías locales
 ```

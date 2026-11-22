@@ -12,6 +12,7 @@ export const DOCUMENTOS = [
   ["sistema-gestion-iso-15189.md", "ISO 15189:2022"],
   ["mapa-normativo.md", "Mapa normativo"],
   ["contexto-colombia.md", "Contexto colombiano"],
+  ["guia-excel.md", "Guía de Excel"],
 ];
 
 const STOP = new Set(("a al algo algun alguna algunas alguno algunos ante antes como con contra cual cuales cuando de del desde donde dos el ella ellas ellos en entre era es esa esas ese eso esos esta estas este esto estos fue ha hay la las le les lo los mas me mi mis mucho muy no nos o otra otro para pero poco por porque que quien se ser si sin sobre son su sus tambien te tiene tienen todo todos tu un una uno unos usted ya yo debo puedo hacer hago hace como cuanto cuantos cuantas necesito quiero saber cual es significa explica explicame dime mi nuestro laboratorio lab")
@@ -47,7 +48,8 @@ const SINONIMOS = {
   indicador: ["indicadores", "calidad"], tat: ["tiempo", "respuesta"], critico: ["valores", "criticos"],
   ep05: ["precision"], ep06: ["linealidad"], ep07: ["interferencia"], ep09: ["comparacion"], ep12: ["cualitativa"], ep15: ["verificacion", "precision"],
   ep17: ["lob", "lod"], ep26: ["lote"], ep28: ["intervalo", "referencia"], ep31: ["comparabilidad"], c24: ["control", "estadistico"],
-  cualitativ: ["ep12", "sensibilidad"], pbrtqc: ["pacientes", "media", "movil"], mensurando: ["magnitud"],
+  cualitativ: ["ep12", "sensibilidad"], excel: ["formula", "grafico"], grafico: ["excel", "grafic"], formula: ["excel"],
+  levey: ["jennings", "grafico", "control"], ref: ["error", "excel"], desvest: ["desviacion", "excel"], pbrtqc: ["pacientes", "media", "movil"], mensurando: ["magnitud"],
 };
 
 export function normalizar(t) {
