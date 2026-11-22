@@ -1,0 +1,25 @@
+{
+  "name": "PatricIA · Metrología y calidad en el laboratorio clínico",
+  "short_name": "PatricIA",
+  "description": "Asistente experto en metrología y calidad para el laboratorio clínico: ISO 15189, incertidumbre, Westgard, Sigma, verificación de métodos y normativa colombiana.",
+  "lang": "es",
+  "start_url": "./#/inicio",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070d1a",
+  "theme_color": "#070d1a",
+  "categories": ["medical", "education", "productivity"],
+  "icons": [
+    { "src": "iconos/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "iconos/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "iconos/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "iconos/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Preguntar", "url": "./#/preguntar", "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }] },
+    { "name": "Calculadoras", "url": "./#/calculadoras", "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }] },
+    { "name": "Westgard", "url": "./#/calc/westgard", "icons": [{ "src": "iconos/icono-192.png", "sizes": "192x192" }] }
+  ]
+}

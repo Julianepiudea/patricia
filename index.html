@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PatricIA · Metrología y calidad en el laboratorio clínico</title>
+  <meta name="description" content="PatricIA: asistente experto en metrología y calidad para el laboratorio clínico. ISO 15189, ISO/TS 20914, CLSI, Westgard, Sigma, incertidumbre, verificación de métodos.">
+  <meta name="theme-color" content="#070d1a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3f6fb" media="(prefers-color-scheme: light)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="iconos/icono.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="iconos/icono-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PatricIA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preload" href="fuentes/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fuentes/sora-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // Tema antes de pintar, para evitar parpadeo
+    try { const t = localStorage.getItem("patricia.tema"); if (t) document.documentElement.dataset.tema = t; else if (matchMedia("(prefers-color-scheme: light)").matches) document.documentElement.dataset.tema = "claro"; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="fondo" aria-hidden="true"><i></i><i></i></div>
+  <div class="grano" aria-hidden="true"></div>
+
+  <div class="app">
+    <aside class="lateral" aria-label="Navegación principal">
+      <a class="marca" href="#/inicio" aria-label="PatricIA, inicio">
+        <span class="orbe" aria-hidden="true"></span>
+        <span><b>Patric<em>IA</em></b><small>Metrología y calidad clínica</small></span>
+      </a>
+      <nav class="nav" id="nav"></nav>
+      <div class="pie">
+        <button class="btn icono fantasma" id="btn-tema" aria-label="Cambiar tema claro u oscuro"><i data-lucide="sun-moon"></i></button>
+        <button class="btn fantasma oculto" id="btn-instalar"><i data-lucide="download"></i> Instalar</button>
+      </div>
+    </aside>
+
+    <header class="barra-movil">
+      <a class="marca" href="#/inicio" aria-label="PatricIA, inicio">
+        <span class="orbe" aria-hidden="true"></span>
+        <span><b>Patric<em>IA</em></b></span>
+      </a>
+      <div style="display:flex;gap:4px">
+        <button class="btn icono fantasma oculto" id="btn-instalar-m" aria-label="Instalar PatricIA"><i data-lucide="download"></i></button>
+        <button class="btn icono fantasma" id="btn-tema-m" aria-label="Cambiar tema claro u oscuro"><i data-lucide="sun-moon"></i></button>
+      </div>
+    </header>
+
+    <main class="principal" id="vista" tabindex="-1" aria-live="polite"></main>
+
+    <nav class="tabs-movil" id="tabs" aria-label="Navegación"></nav>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="vendor/lucide.min.js"></script>
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/xlsx.full.min.js" defer></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
